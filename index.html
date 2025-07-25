@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-g">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Government Scheme Finder</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; background-color: #f0f2f5; color: #1c1e21; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 40px auto; padding: 30px; background-color: #fff; border-radius: 8px; box-shadow: 0 2px 12px rgba(0,0,0,0.1); }
+        h1 { text-align: center; color: #0c59a3; }
+        p { text-align: center; color: #606770; font-size: 1.1em; }
+        textarea { width: 100%; padding: 15px; font-size: 1em; border-radius: 6px; border: 1px solid #ddd; resize: vertical; min-height: 80px; box-sizing: border-box; }
+        button { display: block; width: 100%; padding: 15px; font-size: 1.2em; background-color: #1877f2; color: #fff; border: none; border-radius: 6px; cursor: pointer; margin-top: 15px; }
+        button:hover { background-color: #166fe5; }
+        .loader { display: none; margin: 20px auto; border: 5px solid #f3f3f3; border-radius: 50%; border-top: 5px solid #1877f2; width: 40px; height: 40px; animation: spin 1s linear infinite; }
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+        #results { margin-top: 30px; }
+        .scheme-card { background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 20px; margin-bottom: 20px; }
+        .scheme-card h3 { margin-top: 0; color: #0c59a3; }
+        .scheme-card p { text-align: left; font-size: 1em; }
+        .scheme-card a { color: #1877f2; text-decoration: none; font-weight: bold; }
+        .scheme-card span { display: inline-block; background-color: #e7f3ff; color: #1877f2; padding: 5px 10px; border-radius: 15px; font-size: 0.8em; margin-right: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>AI Government Scheme Finder</h1>
+        <p>Describe yourself in plain English to find relevant government schemes.</p>
+        <form id="searchForm">
+            <textarea id="queryInput" placeholder="e.g., I am a farmer in Maharashtra with 2 acres of land..." required></textarea>
+            <button type="submit">Find Schemes</button>
+        </form>
+        <div class="loader" id="loader"></div>
+        <div id="results"></div>
+    </div>
+
+    <script>
+        document.getElementById('searchForm').addEventListener('submit', async function(event) {
+            event.preventDefault(); // Prevent the form from reloading the page
+            
+            const query = document.getElementById('queryInput').value;
+            const resultsDiv = document.getElementById('results');
+            const loader = document.getElementById('loader');
+
+            // Clear previous results and show loader
+            resultsDiv.innerHTML = '';
+            loader.style.display = 'block';
+
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query })
+                });
+
+                const schemes = await response.json();
+                loader.style.display = 'none';
+
+                if (schemes.length === 0) {
+                    resultsDiv.innerHTML = '<p>No relevant schemes found. Try describing yourself differently.</p>';
+                    return;
+                }
+
+                schemes.forEach(scheme => {
+                    const card = document.createElement('div');
+                    card.className = 'scheme-card';
+                    card.innerHTML = `
+                        <h3>${scheme.name}</h3>
+                        <p><strong>Description:</strong> ${scheme.description}</p>
+                        <p><strong>Eligibility:</strong> ${scheme.eligibility_summary}</p>
+                        <div>
+                            <span>${scheme.category}</span>
+                            <span>${scheme.state}</span>
+                        </div>
+                        <br>
+                        <a href="${scheme.link}" target="_blank">Official Link &rarr;</a>
+                    `;
+                    resultsDiv.appendChild(card);
+                });
+
+            } catch (error) {
+                loader.style.display = 'none';
+                resultsDiv.innerHTML = '<p>Sorry, an error occurred. Please try again.</p>';
+                console.error('Error:', error);
+            }
+        });
+    </script>
+</body>
+</html>
